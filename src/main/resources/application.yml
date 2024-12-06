@@ -22,8 +22,10 @@ app:
     scheduler1:
       id: scheduler1
       interval: 5000
+      time-unit: milliseconds
       enabled: true
     scheduler2:
       id: scheduler2
       interval: 5000
+      time-unit: milliseconds
       enabled: true

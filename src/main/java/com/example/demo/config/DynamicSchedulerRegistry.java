@@ -11,10 +11,11 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
-public class DynamicSchedulerRegistry {
+class DynamicSchedulerRegistry {
     private final ThreadPoolTaskScheduler taskScheduler;
     private final Map<String, SchedulerInfo> schedulers = new ConcurrentHashMap<>();
 
@@ -24,14 +25,15 @@ public class DynamicSchedulerRegistry {
         this.taskScheduler.initialize();
     }
 
-    public void registerScheduler(String schedulerId, Runnable task, long interval, boolean enabled) {
+    public void registerScheduler(String schedulerId, Runnable task, TimeUnit timeUnit, long interval, boolean enabled) {
         SchedulerInfo existingScheduler = schedulers.get(schedulerId);
 
         if (existingScheduler != null) {
             boolean intervalChanged = existingScheduler.getInterval() != interval;
+            boolean timeUnitChanged = !existingScheduler.getTimeUnit().equals(timeUnit);
             boolean enabledStateChanged = existingScheduler.isEnabled() != enabled;
 
-            if (!intervalChanged && !enabledStateChanged) {
+            if (!intervalChanged && !timeUnitChanged && !enabledStateChanged) {
                 log.debug("Scheduler {} settings unchanged, skipping restart", schedulerId);
                 return;
             }
@@ -40,24 +42,29 @@ public class DynamicSchedulerRegistry {
                 log.debug("Scheduler {} interval changed from {} to {}",
                         schedulerId, existingScheduler.getInterval(), interval);
             }
+            if (timeUnitChanged) {
+                log.debug("Scheduler {} time unit changed from {} to {}",
+                        schedulerId, existingScheduler.getTimeUnit(), timeUnit);
+            }
             if (enabledStateChanged) {
                 log.debug("Scheduler {} enabled state changed from {} to {}",
                         schedulerId, existingScheduler.isEnabled(), enabled);
             }
 
-            if ((intervalChanged && existingScheduler.isEnabled() && enabled) ||
+            if ((intervalChanged || timeUnitChanged) && existingScheduler.isEnabled() && enabled ||
                 (enabledStateChanged && existingScheduler.isEnabled() && !enabled)) {
                 stopScheduler(schedulerId);
             }
         }
 
         if (enabled) {
+            interval = convertToMillis(interval, timeUnit);
             log.info("Starting scheduler {} with interval: {} ms", schedulerId, interval);
             ScheduledFuture<?> future = taskScheduler.scheduleAtFixedRate(task, Duration.ofMillis(interval));
-            schedulers.put(schedulerId, new SchedulerInfo(task, interval, future, true));
+            schedulers.put(schedulerId, new SchedulerInfo(task, interval, timeUnit, future, true));
         } else {
             log.info("Registering scheduler {} in disabled state", schedulerId);
-            schedulers.put(schedulerId, new SchedulerInfo(task, interval, null, false));
+            schedulers.put(schedulerId, new SchedulerInfo(task, interval, timeUnit, null, false));
         }
     }
 
@@ -97,12 +104,17 @@ public class DynamicSchedulerRegistry {
         schedulers.keySet().forEach(this::stopScheduler);
     }
 
+    private long convertToMillis(long value, TimeUnit unit) {
+        return unit.toMillis(value);
+    }
+
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
     private static class SchedulerInfo {
         private Runnable task;
         private long interval;
+        private TimeUnit timeUnit;
         private ScheduledFuture<?> future;
         private boolean enabled;
     }

@@ -13,7 +13,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @Slf4j
 @Configuration
 @EnableScheduling
-public class SchedulerConfig {
+class SchedulerConfig {
     private final ConfigData configData;
     private final DynamicSchedulerRegistry schedulerRegistry;
     private final ServiceSchedule serviceSchedule1;
@@ -46,6 +46,7 @@ public class SchedulerConfig {
         schedulerRegistry.registerScheduler(
                 schedulers.getScheduler1().getId(),
                 serviceSchedule1::printData,
+                schedulers.getScheduler1().getTimeUnitAsEnum(),
                 schedulers.getScheduler1().getInterval(),
                 schedulers.getScheduler1().isEnabled()
         );
@@ -53,6 +54,7 @@ public class SchedulerConfig {
         schedulerRegistry.registerScheduler(
                 schedulers.getScheduler2().getId(),
                 serviceSchedule2::printData,
+                schedulers.getScheduler2().getTimeUnitAsEnum(),
                 schedulers.getScheduler2().getInterval(),
                 schedulers.getScheduler2().isEnabled()
         );

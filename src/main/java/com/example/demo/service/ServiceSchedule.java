@@ -3,7 +3,6 @@ package com.example.demo.service;
 
 import com.example.demo.config.properties.ConfigData;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -19,6 +18,6 @@ public class ServiceSchedule {
     //    @Scheduled(fixedRateString = "${app.schedulers.scheduler1.interval}")
     public void printData() {
         ConfigData.SchedulerConfig scheduler1 = configData.getSchedulers().getScheduler1();
-        log.info("ServiceSchedule: id={}, duration={}", scheduler1.getId(), scheduler1.getInterval());
+        log.info("ServiceSchedule: id={}, timeUnit={}, duration={}", scheduler1.getId(), scheduler1.getTimeUnit(), scheduler1.getInterval());
     }
 }

@@ -15,6 +15,6 @@ public class ServiceSchedule2 {
 
     public void printData() {
         ConfigData.SchedulerConfig scheduler2 = configData.getSchedulers().getScheduler2();
-        log.info("ServiceSchedule2: id={}, duration={}", scheduler2.getId(), scheduler2.getInterval());
+        log.info("ServiceSchedule2: id={}, timeUnit={}, duration={}", scheduler2.getId(), scheduler2.getTimeUnit(), scheduler2.getInterval());
     }
 }
