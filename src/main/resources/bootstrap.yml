@@ -1,0 +1,21 @@
+#spring:
+#  application:
+#    name: demo
+#  cloud:
+#    config:
+#      server:
+#        git:
+#          uri: https://github.com/mstf-yalcin/x.git
+#        bootstrap: true
+
+spring:
+  application:
+    name: demo
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: file:///C:/Users/mustafa/Downloads/config
+        bootstrap: true
+  profiles:
+    active: native
