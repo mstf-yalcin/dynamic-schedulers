@@ -18,4 +18,7 @@ curl -X POST http://localhost:8080/actuator/refresh
       interval: 5000
       time-unit: milliseconds
       enabled: true
+  default-setting:
+    time-unit: "MILLISECONDS"
+    min-interval: 1000
 ```
