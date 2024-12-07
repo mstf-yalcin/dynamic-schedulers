@@ -1,14 +1,17 @@
 package com.example.demo.config;
 
+import com.example.demo.annotation.SchedulerTask;
 import com.example.demo.config.properties.ConfigData;
-import com.example.demo.service.ServiceSchedule;
-import com.example.demo.service.ServiceSchedule2;
+import com.example.demo.service.ScheduledTasks;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.context.scope.refresh.RefreshScopeRefreshedEvent;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.EnableScheduling;
+
+import java.util.Map;
 
 @Slf4j
 @Configuration
@@ -16,17 +19,14 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 class SchedulerConfig {
     private final ConfigData configData;
     private final DynamicSchedulerRegistry schedulerRegistry;
-    private final ServiceSchedule serviceSchedule1;
-    private final ServiceSchedule2 serviceSchedule2;
+    private final ApplicationContext applicationContext;
+
 
     public SchedulerConfig(ConfigData configData,
-                           DynamicSchedulerRegistry schedulerRegistry,
-                           ServiceSchedule serviceSchedule1,
-                           ServiceSchedule2 serviceSchedule2) {
+                           DynamicSchedulerRegistry schedulerRegistry, ApplicationContext applicationContext) {
         this.configData = configData;
         this.schedulerRegistry = schedulerRegistry;
-        this.serviceSchedule1 = serviceSchedule1;
-        this.serviceSchedule2 = serviceSchedule2;
+        this.applicationContext = applicationContext;
     }
 
     @PostConstruct
@@ -41,22 +41,34 @@ class SchedulerConfig {
     }
 
     private void startAllSchedulers() {
-        var schedulers = configData.getSchedulers();
-        //foreach
-        schedulerRegistry.registerScheduler(
-                schedulers.getScheduler1().getId(),
-                serviceSchedule1::printData,
-                schedulers.getScheduler1().getTimeUnitAsEnum(),
-                schedulers.getScheduler1().getInterval(),
-                schedulers.getScheduler1().isEnabled()
-        );
+        Map<String, ScheduledTasks> scheduledTasks = applicationContext.getBeansOfType(ScheduledTasks.class);
+        Map<String, ConfigData.SchedulerConfig> schedulers = configData.getSchedulers();
 
-        schedulerRegistry.registerScheduler(
-                schedulers.getScheduler2().getId(),
-                serviceSchedule2::printData,
-                schedulers.getScheduler2().getTimeUnitAsEnum(),
-                schedulers.getScheduler2().getInterval(),
-                schedulers.getScheduler2().isEnabled()
-        );
+        scheduledTasks.forEach((beanName, task) -> {
+
+            SchedulerTask annotation = task.getClass().getAnnotation(SchedulerTask.class);
+
+            if (annotation == null) {
+                log.warn("Bean {} implements ScheduledTasks but missing @SchedulerTask annotation", beanName);
+                return;
+            }
+
+            String schedulerId = annotation.schedulerId();
+            ConfigData.SchedulerConfig schedulerConfig = schedulers.get(schedulerId);
+
+            if (schedulerConfig == null) {
+                log.error("No configuration found for scheduler ID: {}", schedulerConfig.getId());
+                return;
+            }
+
+            schedulerRegistry.registerScheduler(
+                    schedulerConfig.getId(),
+                    task::execute,
+                    schedulerConfig.getTimeUnitAsEnum(),
+                    schedulerConfig.getInterval(),
+                    schedulerConfig.isEnabled()
+            );
+
+        });
     }
 }

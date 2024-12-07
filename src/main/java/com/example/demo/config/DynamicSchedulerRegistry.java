@@ -38,13 +38,13 @@ class DynamicSchedulerRegistry {
                 return;
             }
 
-            if (intervalChanged) {
-                log.debug("Scheduler {} interval changed from {} to {}",
-                        schedulerId, existingScheduler.getInterval(), interval);
-            }
             if (timeUnitChanged) {
                 log.debug("Scheduler {} time unit changed from {} to {}",
                         schedulerId, existingScheduler.getTimeUnit(), timeUnit);
+            }
+            if (intervalChanged) {
+                log.debug("Scheduler {} interval changed from {} to {}",
+                        schedulerId, existingScheduler.getInterval(), interval);
             }
             if (enabledStateChanged) {
                 log.debug("Scheduler {} enabled state changed from {} to {}",

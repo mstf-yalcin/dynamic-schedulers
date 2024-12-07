@@ -1,7 +1,3 @@
-spring:
-  profiles:
-    active: dev
-
 logging:
   level:
     com:
@@ -29,3 +25,6 @@ app:
       interval: 5000
       time-unit: milliseconds
       enabled: true
+  default-setting:
+    time-unit: "MILLISECONDS"
+    min-interval: 3000

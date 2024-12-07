@@ -9,6 +9,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -20,18 +22,14 @@ import java.util.concurrent.TimeUnit;
 public class ConfigData {
     private String property1;
     private String property2;
-    private Schedulers schedulers;
+
+    private Map<String, SchedulerConfig> schedulers = new HashMap<>();
+    private final static DefaultSettings defaultSettings = new DefaultSettings();
 
     @Data
-    public static class Properties {
-        private String property1;
-        private String property2;
-    }
-
-    @Data
-    public static class Schedulers {
-        private SchedulerConfig scheduler1;
-        private SchedulerConfig scheduler2;
+    public static class DefaultSettings {
+        private TimeUnit timeUnit = TimeUnit.MILLISECONDS;
+        private long minInterval = 1000;
     }
 
     @Data
@@ -40,20 +38,19 @@ public class ConfigData {
         private long interval;
         private String timeUnit;
         private boolean enabled;
-        private static final TimeUnit DEFAULT_TIME_UNIT = TimeUnit.MILLISECONDS;
-        private static final long DEFAULT_MIN_INTERVAL_MS = 3000;
 
         public TimeUnit getTimeUnitAsEnum() {
             try {
                 return TimeUnit.valueOf(timeUnit.toUpperCase());
             } catch (IllegalArgumentException e) {
-                this.interval = DEFAULT_MIN_INTERVAL_MS;
-                this.timeUnit = DEFAULT_TIME_UNIT.name().toLowerCase();
 
                 log.error("Invalid time unit: '{}' for scheduler {}. Valid values are: {}. Defaulting to {}",
-                        timeUnit, id, Arrays.toString(TimeUnit.values()), timeUnit);
+                        timeUnit, id, Arrays.toString(TimeUnit.values()), defaultSettings.getTimeUnit());
 
-                return DEFAULT_TIME_UNIT;
+                this.interval = defaultSettings.getMinInterval();
+                this.timeUnit = defaultSettings.getTimeUnit().name().toLowerCase();
+
+                return defaultSettings.timeUnit;
             }
         }
     }
